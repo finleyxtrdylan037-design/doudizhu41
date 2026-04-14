@@ -3,81 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>四人斗地主</title>
+    <title>四人斗地主 - 逻辑修正版</title>
     <style>
-        /* 基础兼容性样式 */
+        /* 样式保持不变，确保 iOS 兼容性 */
         * { -webkit-tap-highlight-color: rgba(0,0,0,0); box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #1a5c2a; font-family: -apple-system, sans-serif; }
-        
         #game-container { position: relative; width: 100%; height: 100%; background: radial-gradient(circle, #1e6b31 0%, #1a5c2a 100%); }
-
-        /* 顶部状态栏 */
         .top-bar { position: absolute; top: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: space-between; padding: 0 12px; z-index: 100; }
         .game-title { color: #f0c040; font-size: 16px; font-weight: bold; }
-
-        /* AI 区域 (逆时针排列) */
         .ai-player { position: absolute; text-align: center; color: white; z-index: 50; width: 100px; }
         .ai-top { top: 60px; left: 50%; transform: translateX(-50%); }
         .ai-left { top: 35%; left: 5px; }
         .ai-right { top: 35%; right: 5px; }
-        .active-player { color: #f0c040 !important; font-weight: bold; text-shadow: 0 0 5px #000; }
-
-        /* 出牌区 */
+        .active-player { color: #f0c040 !important; font-weight: bold; }
         .play-zone { position: absolute; width: 100%; height: 80px; display: flex; justify-content: center; align-items: center; pointer-events: none; z-index: 200; }
         #play-zone-top { top: 130px; }
         #play-zone-left { top: 35%; left: 80px; justify-content: flex-start; }
         #play-zone-right { top: 35%; right: 80px; justify-content: flex-end; }
         #play-zone-player { bottom: 220px; }
-
-        /* 手牌区：解决重叠与看清数字 */
-        #player-hand { 
-            position: absolute; bottom: 80px; width: 100%; 
-            display: flex; flex-wrap: wrap; justify-content: center; 
-            padding: 0 10px; z-index: 300; 
-        }
-        
-        .card { 
-            width: 46px; height: 66px; background: white; border-radius: 4px; 
-            position: relative; box-shadow: 1px 1px 3px rgba(0,0,0,0.4); 
-            transition: transform 0.1s; margin: 2px -15px; 
-        }
+        #player-hand { position: absolute; bottom: 80px; width: 100%; display: flex; flex-wrap: wrap; justify-content: center; padding: 0 10px; z-index: 300; }
+        .card { width: 46px; height: 66px; background: white; border-radius: 4px; position: relative; box-shadow: 1px 1px 3px rgba(0,0,0,0.4); margin: 2px -15px; }
         .card.selected { transform: translateY(-20px); box-shadow: 0 0 8px #f0c040; }
-        .card .value { position: absolute; top: 2px; left: 3px; font-size: 16px; font-weight: bold; line-height: 1; }
+        .card .value { position: absolute; top: 2px; left: 3px; font-size: 16px; font-weight: bold; }
         .card .suit { position: absolute; top: 18px; left: 3px; font-size: 13px; }
-
-        /* 按钮 */
         .action-bar { position: absolute; bottom: 15px; width: 100%; display: none; justify-content: center; gap: 12px; z-index: 1000; }
-        .btn { height: 40px; padding: 0 22px; border-radius: 20px; border: none; font-size: 16px; font-weight: bold; -webkit-appearance: none; background: #eee; }
+        .btn { height: 40px; padding: 0 22px; border-radius: 20px; border: none; font-size: 16px; font-weight: bold; background: #f0c040; color: #333; }
         .btn-gray { background: #666; color: white; }
-        .btn-gold { background: #f0c040; color: #333; }
-        
-        .btn-cheat { position: absolute; bottom: 100px; right: 15px; width: 44px; height: 44px; border-radius: 22px; background: rgba(0,0,0,0.6); color: white; font-size: 20px; z-index: 500; border: none; display: flex; align-items: center; justify-content: center; }
-        .btn-cheat.active { background: #ff9800; }
-
         .red-suit { color: #d32f2f; } .black-suit { color: #212121; }
-        .cheat-card { display: inline-block; width: 16px; height: 22px; background: white; border-radius: 2px; margin: 1px; font-size: 10px; line-height: 22px; text-align: center; color: #333; font-weight: bold; border: 1px solid #ccc; }
-        .cheat-card.red { color: #d32f2f; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div class="top-bar"><div class="game-title">四人斗地主</div><div id="score-display" style="color:#ccc">积分: 0</div></div>
-
-    <div class="ai-player ai-top" id="p-top"><span class="player-name">电脑B (对家)</span><div id="hand-top-count" class="card-count">25</div></div>
-    <div class="ai-player ai-left" id="p-left"><span class="player-name">电脑A (上家)</span><div id="hand-left-count" class="card-count">25</div></div>
-    <div class="ai-player ai-right" id="p-right"><span class="player-name">电脑C (下家)</span><div id="hand-right-count" class="card-count">25</div></div>
-
+    <div class="top-bar"><div class="game-title">四人斗地主</div><div style="color:#ccc">积分: 0</div></div>
+    <div class="ai-player ai-top" id="p-top">电脑B (对家)<div id="hand-top-count">25</div></div>
+    <div class="ai-player ai-left" id="p-left">电脑A (上家)<div id="hand-left-count">25</div></div>
+    <div class="ai-player ai-right" id="p-right">电脑C (下家)<div id="hand-right-count">25</div></div>
     <div id="play-zone-top" class="play-zone"></div>
     <div id="play-zone-left" class="play-zone"></div>
     <div id="play-zone-right" class="play-zone"></div>
     <div id="play-zone-player" class="play-zone"></div>
-
     <div id="player-hand"></div>
-    <button id="btn-cheat" class="btn-cheat">&#128065;</button>
-
-    <div id="bid-bar" class="action-bar"><button class="btn btn-gold" onclick="handleBid(3)">抢地主</button><button class="btn btn-gray" onclick="handleBid(0)">不叫</button></div>
-    <div id="action-bar" class="action-bar"><button class="btn btn-gray" id="btn-hint">提示</button><button class="btn btn-gray" id="btn-pass">过</button><button class="btn btn-gold" id="btn-play">出牌</button></div>
+    <div id="bid-bar" class="action-bar"><button class="btn" onclick="handleBid(3)">抢地主</button><button class="btn btn-gray" onclick="handleBid(0)">不叫</button></div>
+    <div id="action-bar" class="action-bar"><button class="btn btn-gray" id="btn-hint">提示</button><button class="btn btn-gray" id="btn-pass">过</button><button class="btn" id="btn-play">出牌</button></div>
 </div>
 
 <script>
@@ -88,9 +56,8 @@
         { id: 2, hand: [], pos: 'top', name: '电脑B' },
         { id: 3, hand: [], pos: 'right', name: '电脑C' }
     ];
-    var lastHand = null, lastPlayerIdx = -1, currentPlayer = -1, selectedCards = [], isCheatOpen = false, hintList = [], hintIdx = 0;
+    var lastHand = null, lastPlayerIdx = -1, currentPlayer = -1, selectedCards = [], hintList = [], hintIdx = 0, gameStage = 'waiting';
 
-    // 核心切换：逆时针
     function getNext(curr) { return curr === 0 ? 3 : (curr === 3 ? 2 : (curr === 2 ? 1 : 0)); }
 
     function initGame() {
@@ -105,31 +72,25 @@
         render();
     }
 
-    // 牌型识别核心修复
+    // 牌型识别修复
     function analyze(hand) {
         if(!hand || !hand.length) return null;
         var len = hand.length, counts = {};
         hand.forEach(function(c){ counts[c.val] = (counts[c.val]||0)+1; });
         var keys = Object.keys(counts).map(Number).sort(function(a,b){return a-b;});
 
-        // 1. 炸弹 (4-8张)
         if(keys.length === 1 && counts[keys[0]] >= 4) return {type:'bomb', val:keys[0], size:len};
-        // 2. 王炸 (4张王)
         if(len === 4 && (counts[16]||0)+(counts[17]||0) === 4) return {type:'rocket', val:999, size:4};
-        // 3. 单张
         if(len === 1) return {type:'single', val:keys[0], size:1};
-        // 4. 对子 [修复：识别对子]
         if(len === 2 && keys.length === 1) return {type:'pair', val:keys[0], size:2};
-        // 5. 三带二 (四人版不带单)
         if(len === 5 && keys.length === 2 && (counts[keys[0]]===3||counts[keys[1]]===3)) return {type:'trio', val:counts[keys[0]]===3?keys[0]:keys[1], size:5};
-        
-        return null;
+        return null; // 非法组合直接返回 null
     }
 
     function canBeat(newH, oldH) {
+        var n = analyze(newH); if(!n) return false;
         if(!oldH) return true;
-        var n = analyze(newH), o = analyze(oldH);
-        if(!n) return false;
+        var o = analyze(oldH);
         if(n.type === 'rocket') return true;
         if(n.type === 'bomb') {
             if(o.type !== 'bomb' && o.type !== 'rocket') return true;
@@ -142,31 +103,28 @@
     function findHints(hand, target) {
         var results = [], counts = {};
         hand.forEach(function(c){ counts[c.val] = (counts[c.val]||0)+1; });
+        var keys = Object.keys(counts).map(Number).sort(function(a,b){return a-b;});
         
         function add(v, n) { 
             var move = hand.filter(function(c){return c.val===v;}).slice(0,n);
             if(move.length === n) results.push(move);
         }
 
-        var keys = Object.keys(counts).map(Number).sort(function(a,b){return a-b;});
-
-        if(!target) { // 自由出牌，提示最小单张/对子
+        if(!target) {
             keys.forEach(function(v){ if(counts[v]<4) { add(v,1); add(v,2); } });
         } else {
             var o = analyze(target);
             keys.forEach(function(v){
-                if(counts[v] < 4 || (o.type === 'bomb')) { // 优先不拆炸弹
+                if(counts[v] < 4 || (o.type === 'bomb')) {
                     if(o.type === 'single' && v > o.val) add(v,1);
                     if(o.type === 'pair' && v > o.val && counts[v]>=2) add(v,2);
                 }
             });
-            // 实在不行才提示炸弹
             keys.forEach(function(v){ if(counts[v]>=4) add(v, counts[v]); });
         }
         return results;
     }
 
-    // 交互与渲染
     function render() {
         var container = document.getElementById('player-hand'); container.innerHTML = '';
         players[0].hand.forEach(function(c){
@@ -176,28 +134,22 @@
             el.onclick = function(){ 
                 var idx = -1; selectedCards.forEach(function(s,i){if(s.id===c.id)idx=i;});
                 if(idx===-1) selectedCards.push(c); else selectedCards.splice(idx,1);
-                hintList = []; render();
+                hintList = []; render(); // 手动选牌时重置提示索引
             };
             container.appendChild(el);
         });
 
         [1,2,3].forEach(function(i){
-            var p = players[i], el = document.getElementById('p-'+p.pos);
-            el.className = 'ai-player ai-'+p.pos + (currentPlayer===i?' active-player':'');
-            document.getElementById('hand-'+p.pos+'-count').innerHTML = '<div>'+p.hand.length+'</div>' + (isCheatOpen?renderCheat(p.hand):'');
+            var p = players[i]; document.getElementById('p-'+p.pos).className = 'ai-player ai-'+p.pos + (currentPlayer===i?' active-player':'');
+            document.getElementById('hand-'+p.pos+'-count').innerText = p.hand.length;
         });
 
         document.getElementById('action-bar').style.display = (gameStage==='playing'&&currentPlayer===0)?'flex':'none';
         document.getElementById('btn-pass').style.visibility = (lastPlayerIdx===0||lastPlayerIdx===-1)?'hidden':'visible';
     }
 
-    function renderCheat(h) { var s = '<div style="margin-top:5px">'; h.forEach(function(c){ s += '<span class="cheat-card '+(c.suit==='♥'||c.suit==='♦'?'red':'')+'">'+(c.val<=10?c.val:{11:'J',12:'Q',13:'K',14:'A',15:'2',16:'小',17:'大'}[c.val])+'</span>'; }); return s+'</div>'; }
-
     window.handleBid = function(s){
-        var idx = s>0?0:Math.floor(Math.random()*4);
-        players[idx].hand = players[idx].hand.concat(cards); // 示例底牌
-        players[idx].hand.sort(function(a,b){return b.val-a.val;});
-        gameStage='playing'; currentPlayer=idx; lastPlayerIdx=-1;
+        var idx = s>0?0:Math.floor(Math.random()*4); gameStage='playing'; currentPlayer=idx; lastPlayerIdx=-1;
         document.getElementById('bid-bar').style.display='none'; render();
         if(currentPlayer!==0) setTimeout(executeAI, 800);
     }
@@ -205,7 +157,7 @@
     function executePlay(pIdx, pCards) {
         if(lastPlayerIdx===pIdx || lastPlayerIdx===-1) ['player','left','top','right'].forEach(function(z){document.getElementById('play-zone-'+z).innerHTML='';});
         var h = players[pIdx].hand; pCards.forEach(function(pc){for(var i=0;i<h.length;i++)if(h[i].id===pc.id){h.splice(i,1);break;}});
-        lastHand = pCards; lastPlayerIdx = pIdx; selectedCards = []; hintList = [];
+        lastHand = pCards; lastPlayerIdx = pIdx; selectedCards = []; hintList = []; hintIdx = 0; // 重置提示
         renderZone(pIdx, pCards);
         if(!h.length){ alert(players[pIdx].name+'获胜！'); location.reload(); return; }
         currentPlayer = getNext(pIdx); render();
@@ -220,16 +172,25 @@
     function executeAI() {
         var hints = findHints(players[currentPlayer].hand, lastPlayerIdx===currentPlayer?null:lastHand);
         if(hints.length) executePlay(currentPlayer, hints[0]);
-        else { document.getElementById('play-zone-'+players[currentPlayer].pos).innerHTML='<span style="color:#f0c040;font-weight:bold;font-size:20px">过</span>'; currentPlayer=getNext(currentPlayer); if(currentPlayer===lastPlayerIdx) lastHand=null; render(); if(currentPlayer!==0) setTimeout(executeAI, 800); }
+        else { 
+            document.getElementById('play-zone-'+players[currentPlayer].pos).innerHTML='<span style="color:#f0c040;font-weight:bold;font-size:20px">过</span>'; 
+            currentPlayer=getNext(currentPlayer); if(currentPlayer===lastPlayerIdx) lastHand=null; 
+            render(); if(currentPlayer!==0) setTimeout(executeAI, 800); 
+        }
     }
 
-    document.getElementById('btn-play').onclick = function(){ if(canBeat(selectedCards, lastPlayerIdx===0?null:lastHand)) executePlay(0, selectedCards); else alert('牌型不合法或不够大'); };
-    document.getElementById('btn-pass').onclick = function(){ document.getElementById('play-zone-player').innerHTML='<span style="color:#f0c040;font-weight:bold;font-size:20px">过</span>'; currentPlayer=getNext(0); if(currentPlayer===lastPlayerIdx) lastHand=null; render(); setTimeout(executeAI, 800); };
+    document.getElementById('btn-play').onclick = function(){ 
+        if(canBeat(selectedCards, lastPlayerIdx===0?null:lastHand)) executePlay(0, selectedCards); 
+        else alert('牌型不合法（比如混出4和5）或不够大！'); 
+    };
+    document.getElementById('btn-pass').onclick = function(){ 
+        document.getElementById('play-zone-player').innerHTML='<span style="color:#f0c040;font-weight:bold;font-size:20px">过</span>'; 
+        currentPlayer=getNext(0); if(currentPlayer===lastPlayerIdx) lastHand=null; render(); setTimeout(executeAI, 800); 
+    };
     document.getElementById('btn-hint').onclick = function(){
-        if(!hintList.length) hintList = findHints(players[0].hand, lastPlayerIdx===0?null:lastHand);
+        if(!hintList.length) { hintList = findHints(players[0].hand, lastPlayerIdx===0?null:lastHand); hintIdx = 0; }
         if(hintList.length) { selectedCards = hintList[hintIdx % hintList.length]; hintIdx++; render(); }
     };
-    document.getElementById('btn-cheat').onclick = function(){ isCheatOpen=!isCheatOpen; this.classList.toggle('active'); render(); };
 
     initGame();
 })();
